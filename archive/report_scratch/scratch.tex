@@ -1,0 +1,121 @@
+\documentclass[12pt]{article}
+\usepackage{url}
+\usepackage{mathtools}
+\usepackage{cancel}
+\usepackage{amsmath}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{enumerate}
+\usepackage{graphicx}
+\usepackage{mdframed}
+\usepackage{multicol}
+\usepackage{verbatim}
+\usepackage{physics}
+\usepackage{parskip}
+
+\usepackage[margin = .7in]{geometry}
+\geometry{letterpaper}
+\linespread{1.2}
+\usepackage{tikz}
+\usetikzlibrary{quantikz,automata,chains,arrows,positioning,calc}
+\usetikzlibrary{angles,quotes}
+
+\newcommand{\expec}[1]{\langle #1 \rangle}
+\newcommand{\SE}{Schr\"{o}dinger Equation}
+\newcommand{\alive}{\text{alive}}
+\newcommand{\dead}{\text{dead}}
+
+\newcommand{\logqu}[1]{\Tilde{#1}}
+\newcommand{\logqutwo}[1]{\Tilde{\Tilde{#1}}}
+\newcommand{\psirot}{\ket{\psi_{\textrm{rot}}(t)}}
+\newcommand{\psirotdot}{\ket{\dot{\psi}_{\textrm{rot}}(t)}}
+
+
+
+%% One of the nicest things about LaTeX is you can create custom macros. If  there is a long-ish expression that you will write often, it is nice to give it a shorter command.
+%% For our common number systems.
+\newcommand{\R}{\mathbb{R}} %% The blackboard-bold R that you have seen used for real numbers is typeset by $\mathbb{R}$. This macro means that $\RR$ will yield the same result, and is much shorter to type.
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}} 
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Lbb}{\mathbb{L}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\Afancy}{\mathcal{A}}
+\newcommand{\Bfancy}{\mathcal{B}}
+\newcommand{\Cfancy}{\mathcal{C}}
+\newcommand{\Dfancy}{\mathcal{D}}
+\newcommand{\Efancy}{\mathcal{E}}
+\newcommand{\Ffancy}{\mathcal{F}}
+\newcommand{\Gfancy}{\mathcal{G}}
+\newcommand{\Hfancy}{\mathcal{H}}
+\newcommand{\Ifancy}{\mathcal{I}}
+\newcommand{\Jfancy}{\mathcal{J}}
+\newcommand{\Kfancy}{\mathcal{K}}
+\newcommand{\Lfancy}{\mathcal{L}}
+\newcommand{\Mfancy}{\mathcal{M}}
+\newcommand{\Nfancy}{\mathcal{N}}
+\newcommand{\Ofancy}{\mathcal{O}}
+\newcommand{\Pfancy}{\mathcal{P}}
+\newcommand{\Qfancy}{\mathcal{Q}}
+\newcommand{\Rfancy}{\mathcal{R}}
+\newcommand{\Sfancy}{\mathcal{S}}
+\newcommand{\Tfancy}{\mathcal{T}}
+\newcommand{\Ufancy}{\mathcal{U}}
+\newcommand{\Vfancy}{\mathcal{V}}
+\newcommand{\Wfancy}{\mathcal{W}}
+\newcommand{\Xfancy}{\mathcal{X}}
+\newcommand{\Yfancy}{\mathcal{Y}}
+\newcommand{\Zfancy}{\mathcal{Z}}
+\renewcommand{\thempfootnote}{\arabic{mpfootnote}}
+
+\newcommand{\Var}{\text{Var}}
+\newcommand{\cov}{\text{Cov}}
+
+
+%% Your macros can even accept arguments. 
+% \newcommand\abs[1]{\left| #1 \right|} %% This will do the same but with vertical bars. I.e., \abs{STUFF} gives |STUFF|
+\newcommand\parens[1]{\left( #1 \right)} %% Similar. \parens{STUFF} gives (STUFF)
+\newcommand\brac[1]{\left[ #1 \right]} %% Similar. \brac{STUFF} gives [STUFF]
+\newcommand\solution[1]{\begin{mdframed}
+\emph{Solution.} #1
+\end{mdframed}}
+\newcommand\solutionproof[1]{\begin{mdframed}
+\begin{proof} #1
+\end{proof}
+\end{mdframed}}
+
+\begin{document}
+\noindent Jonathan Pei \hfill 
+
+\begin{center}
+  {\large Scratch}
+\end{center}
+
+\[T_{i, j} = \begin{cases}
+    1 & \text{if user $i$ likes product $j$} \\
+    0 & \text{if user $i$ doesn't like product $j$}
+  \end{cases}
+\]
+
+\textcolor{blue}{
+\[\downarrow \text{ Sample } \downarrow \]}
+\[\tilde{T}_{i, j} = \begin{cases}
+  \frac{T_{i, j}}{p} & \text{w.p. } p = \frac{16n}{\eta^2 (\|T\|_F^2)} \\
+  0 & \text{otherwise}
+\end{cases}\]
+
+\textcolor{blue}{
+\[\downarrow \text{ Compute Row $i$ Approx via Quantum Projection } \downarrow \]}
+\[(\tilde{T}_{\geq \sigma, \kappa})_i = \ket{\tilde{T}_{\geq \sigma, \kappa}^\dagger \tilde{T}_{\geq \sigma, \kappa} \tilde{T}_i} = \text{user $i$'s predicted preferences}\]
+\[\tilde{T} = \sum_i\sigma_i u_i v_i^{\top} \implies \begin{cases}\tilde{T}_{\geq \sigma} = \sum_{\sigma_i \geq \sigma} \sigma_i u_i v_i^{\top} \\
+\tilde{T}_{\geq \sigma, \kappa} = \sum_{\sigma_i \geq \sigma \text{ and some } \sigma_i \in [(1-\kappa)\sigma, \sigma)} \sigma_i u_i v_i^{\top}
+\end{cases}\]
+\textcolor{blue}{
+\[\downarrow \text{ Measure } \downarrow \]}
+\[\text{Recommend product $j$ to user $i$ w.p. } \frac{\abs{(\tilde{T}_{\geq \sigma, \kappa})_{i, j}}^2}{\|(\tilde{T}_{\geq \sigma, \kappa})_i\|_2^2}\]
+\end{document}
