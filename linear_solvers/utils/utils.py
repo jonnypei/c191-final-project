@@ -1,7 +1,10 @@
+from typing import List, Dict
+
 import numpy as np
+from qiskit.circuit import QuantumCircuit
 from qiskit.quantum_info import Statevector
 
-def check_numpy_matrix(matrix, raise_on_failure=True) -> bool:
+def check_numpy_matrix(matrix: np.ndarray, raise_on_failure=True) -> bool:
     """Check if the current configuration is valid."""
     if matrix.shape[0] != matrix.shape[1]:
         if raise_on_failure:
@@ -18,10 +21,10 @@ def check_numpy_matrix(matrix, raise_on_failure=True) -> bool:
 
     return True
 
-def generate_result(state, euclidean_norm):
+def generate_result(state: QuantumCircuit, euclidean_norm: float) -> Dict:
     return {"state": state,
             "euclidean_norm": euclidean_norm}
     
-def get_solution_vector(solution):
-    return Statevector(solution["state"]).data[16:18].real
+def get_solution_vector(solution: Dict) -> List:
+    return Statevector(solution["state"]).data[16:18].real.tolist()
     

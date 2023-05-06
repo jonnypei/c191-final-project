@@ -19,25 +19,23 @@ class HHL():
     """The HHL Algorithm"""
 
     def __init__(self, epsilon=1e-2, scaling=1):
-        super().__init__()
-
         # Tolerance param
         self._epsilon = epsilon
         
         # Tolerances for each part of algorithm
         self._epsilon_r = epsilon / 3  # conditioned rotation
         self._epsilon_a = epsilon / 6  # hamiltonian simulation
-        
-        # Set the default scaling to 1
+
+        # Scaling Factor for eigenvalue representation
         self._scaling = scaling
 
     def get_delta(self, n_lambda: int, lambda_min: float, lambda_max: float) -> float:
-        """Calculates the scaling factor to represent exactly lambda_min on n_lambda binary digits.
+        """Computes the scaling factor to represent lambda_min exactly using n_lambda binary digits.
 
         Args:
             n_l: The number of qubits to represent the eigenvalues.
-            lambda_min: the smallest eigenvalue.
-            lambda_max: the largest eigenvalue.
+            lambda_min: The smallest eigenvalue of the system.
+            lambda_max: The largest eigenvalue of the system.
 
         Returns:
             The value of the scaling factor.
@@ -47,8 +45,8 @@ class HHL():
         if np.abs(lambda_min_tilde - 1) < 1e-7:
             lambda_min_tilde = 1
             
-        formatstr = "#0" + str(n_lambda + 2) + "b"
-        lambda_min_binary = format(int(lambda_min_tilde), formatstr)[2::]
+        lambda_min_binary = format(int(lambda_min_tilde), 
+                                   "#0" + str(n_lambda + 2) + "b")[2::]
         
         lambda_min_rep = 0
         for i, bit in enumerate(lambda_min_binary):
@@ -99,6 +97,7 @@ class HHL():
             The HHL circuit.
         """
         # State preparation circuit
+        assert isinstance(vector, (list, np.ndarray)), f"Invalid type for vector: {type(vector)}."
         if isinstance(vector, list):
             vector = np.array(vector)
         n_b = int(np.log2(len(vector)))
@@ -109,21 +108,19 @@ class HHL():
         n_flag = 1
 
         # Hamiltonian simulation circuit (Trotterization is default, though we do not implement it here)
-        if isinstance(matrix, (list, np.ndarray)):
-            if isinstance(matrix, list):
-                matrix = np.array(matrix)
-            check_numpy_matrix(matrix)
-            if matrix.shape[0] != 2**vector_circuit.num_qubits:
-                raise ValueError(
-                    "Input vector dimension does not match input "
-                    "matrix dimension! Vector dimension: "
-                    + str(vector_circuit.num_qubits)
-                    + ". Matrix dimension: "
-                    + str(matrix.shape[0])
-                )
-            matrix_circuit = NumpyMatrix(matrix, evolution_time=2 * np.pi)
-        else:
-            raise ValueError(f"Invalid type for matrix: {type(matrix)}.")
+        assert isinstance(matrix, (list, np.ndarray)), f"Invalid type for matrix: {type(matrix)}."
+        if isinstance(matrix, list):
+            matrix = np.array(matrix)
+        check_numpy_matrix(matrix)
+        if matrix.shape[0] != 2**vector_circuit.num_qubits:
+            raise ValueError(
+                "Input vector dimension does not match input "
+                "matrix dimension! Vector dimension: "
+                + str(vector_circuit.num_qubits)
+                + ". Matrix dimension: "
+                + str(matrix.shape[0])
+            )
+        matrix_circuit = NumpyMatrix(matrix, evolution_time=2 * np.pi)
 
         # Set the tolerance for the matrix approximation
         if hasattr(matrix_circuit, "tolerance"):
