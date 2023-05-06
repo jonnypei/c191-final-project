@@ -4,6 +4,9 @@ This github repository provides an implementation of the HHL algorithm (quantum 
 
 Contributors: Aditya Ramabadran, Jonny Pei, and Yuki Ito
 
+References: https://learn.qiskit.org/course/ch-applications/solving-linear-systems-of-equations-using-hhl-and-its-qiskit-implementation 
+
+
 ## Getting Started
 
 1. Install the latest version of Python. We developed our code using Python 3.9.7, but any slightly older/newer version should work fine.

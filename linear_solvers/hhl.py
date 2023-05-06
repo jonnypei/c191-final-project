@@ -126,8 +126,8 @@ class HHL():
         if hasattr(matrix_circuit, "tolerance"):
             matrix_circuit.tolerance = self._epsilon_a
 
-        # check if the matrix can calculate the condition number and store the upper bound
-        if hasattr(matrix_circuit, "condition_number") and matrix_circuit.condition_number is not None:
+        # Compute the condition number
+        if matrix_circuit.condition_number is not None:
             kappa = matrix_circuit.condition_number
         else:
             kappa = 1
@@ -137,12 +137,12 @@ class HHL():
         # e^{-2 \pi i \lambda} = e^{2 \pi i (1 - \lambda)}
         n_lambda = max(n_b + 1, int(np.ceil(np.log2(kappa + 1)))) + neg_vals
 
-        # check if the matrix can calculate bounds for the eigenvalues
-        if hasattr(matrix_circuit, "eigs_bounds") and matrix_circuit.eigs_bounds is not None:
+        # Compute bounds for the eigenvalues of the system
+        if matrix_circuit.eigs_bounds is not None:
             lambda_min, lambda_max = matrix_circuit.eigs_bounds
             
             # Constant so that the minimum eigenvalue is represented exactly; 
-            # -1 to take into account the sign qubit
+            # if there are negative eigenvalues, -1 to take into account the sign qubit
             delta = self.get_delta(n_lambda - neg_vals, lambda_min, lambda_max)
             # Update evolution time
             matrix_circuit.evolution_time = (
@@ -152,7 +152,7 @@ class HHL():
             self._scaling = lambda_min
         else:
             delta = 1 / (2**n_lambda)
-            print("The solution will be calculated up to a scaling factor.")
+            print("Note: the solution will be calculated up to a scaling factor.")
 
         reciprocal_circuit = ExactReciprocal(n_lambda, delta, neg_vals=neg_vals)
         # Update number of ancilla qubits
