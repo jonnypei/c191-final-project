@@ -1,5 +1,5 @@
 import numpy as np
-from .utils import generate_result
+from .utils.utils import generate_result
 
 def classical_linear_solver(A, b):
     x = np.linalg.solve(A, b)
