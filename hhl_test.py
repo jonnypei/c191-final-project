@@ -3,10 +3,11 @@ from linear_solvers.hhl import HHL
 from linear_solvers.classical_linear_solver import classical_linear_solver
 from linear_solvers.utils.utils import get_solution_vector
  
-A = np.array([[1, 2], [2, 1]])
+A = np.array([[1, 3], [3, 1]])
 b = np.array([1, 0])
 
-hhl_solver = HHL()
+hhl_solver = HHL(reciprocal_is_exact=True)
+# hhl_solver = HHL(reciprocal_is_exact=False)
 hhl_solution = hhl_solver.solve(A, b)
 print("HHL Solution:", hhl_solution)
 print("HHL Solution Vector:", get_solution_vector(hhl_solution))

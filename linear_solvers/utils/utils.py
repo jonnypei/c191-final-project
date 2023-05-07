@@ -26,5 +26,12 @@ def generate_result(state: QuantumCircuit, euclidean_norm: float) -> Dict:
             "euclidean_norm": euclidean_norm}
     
 def get_solution_vector(solution: Dict) -> List:
-    return Statevector(solution["state"]).data[16:18].real.tolist()
+    solution_vector = Statevector(solution["state"]).data[16:18].real.tolist()
+    actual_norm = solution["euclidean_norm"]
+    quasi_norm = np.linalg.norm(solution_vector)
+    
+    # When approximating the matrix, we may end up with a 0 final state
+    if quasi_norm < 1e-7:
+        return solution_vector
+    return actual_norm * (solution_vector / quasi_norm)
     

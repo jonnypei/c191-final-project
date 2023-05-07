@@ -37,7 +37,7 @@ python hhl_test.py
 ```
 Feel free to play around with the inputs $A, \vec{b}$ to test out our implementation. 
 
-**Note:** make sure $A \in \mathbb{R}^{N \times N}$ is hermitian. If $A$ isn't hermitian, you can adjust your inputs to be as follows:
+**Note:** make sure $A \in \mathbb{R}^{N \times N}$ is hermitian and has dimension that is power of 2. If $A$ isn't hermitian, you can adjust your inputs to be as follows:
 $$A^{\prime} = \begin{pmatrix}
 0_{N \times N} & A \\
 A^{\dagger} & 0_{N \times N}

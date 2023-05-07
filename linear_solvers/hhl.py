@@ -2,15 +2,10 @@ from typing import Union, List, Dict
 import numpy as np
 
 from qiskit.circuit import QuantumCircuit, QuantumRegister, AncillaRegister
+from qiskit.opflow import Z, I, TensoredOp, StateFn
 from qiskit.circuit.library import PhaseEstimation
 from qiskit.circuit.library.arithmetic.piecewise_chebyshev import PiecewiseChebyshev
 from qiskit.circuit.library.arithmetic.exact_reciprocal import ExactReciprocal
-from qiskit.opflow import (
-    Z,
-    I,
-    StateFn,
-    TensoredOp,
-)
 
 from .utils.numpy_matrix import NumpyMatrix 
 from .utils.utils import check_numpy_matrix, generate_result
@@ -18,15 +13,19 @@ from .utils.utils import check_numpy_matrix, generate_result
 class HHL():
     """The HHL Algorithm"""
 
-    def __init__(self, epsilon=1e-2, scaling=1):
-        # Tolerance param
+    def __init__(self, epsilon=1e-2, reciprocal_is_exact=True, scaling=1):
+        # Tolerance param; default is 0.01
         self._epsilon = epsilon
         
         # Tolerances for each part of algorithm
         self._epsilon_r = epsilon / 3  # conditioned rotation
+        # self._epsilon_s = epsilon / 3  # state preparation
         self._epsilon_a = epsilon / 6  # hamiltonian simulation
 
-        # Scaling Factor for eigenvalue representation
+        # Whether reciprocal implementation is exact; default is True
+        self._reciprocal_is_exact = reciprocal_is_exact
+        
+        # Scaling Factor for eigenvalue representation; default is 1
         self._scaling = scaling
 
     def get_delta(self, n_lambda: int, lambda_min: float, lambda_max: float) -> float:
@@ -54,10 +53,10 @@ class HHL():
         return lambda_min_rep
 
     def calculate_norm(self, qc: QuantumCircuit) -> float:
-        """Calculates the euclidean norm of the solution.
+        """Calculates the euclidean norm of the solution ||x||_2.
 
         Args:
-            qc: The quantum circuit preparing the solution x to the system.
+            qc: The quantum circuit preparing the solution x.
 
         Returns:
             The value of the euclidean norm of the solution.
@@ -73,26 +72,22 @@ class HHL():
 
         # Norm observable
         M = one_op ^ TensoredOp((n_lambda + n_ancilla) * [zero_op]) ^ (I ^ n_b)
-        norm_2 = (~StateFn(M) @ StateFn(qc)).eval()
+        l2_norm = (~StateFn(M) @ StateFn(qc)).eval()
 
-        return np.real(np.sqrt(norm_2) / self._scaling)
+        return np.real(np.sqrt(l2_norm) / self._scaling)
 
     def construct_circuit(self, 
                           matrix: Union[List, np.ndarray], 
                           vector: Union[List, np.ndarray], 
-                          neg_vals=True
+                          neg_eigenvals=True
                           ) -> QuantumCircuit:
         """Construct the HHL circuit.
 
         Args:
             matrix: The matrix of the system, i.e. A in Ax=b
             vector: The vector of the system, i.e. b in Ax=b
-            neg_vals: States whether the matrix has negative eigenvalues.
+            neg_eigenvals: States whether the matrix has negative eigenvalues.
         
-        Raises:
-            ValueError: If the input is not in the correct format.
-            ValueError: If the type of the input matrix is not supported.
-
         Returns:
             The HHL circuit.
         """
@@ -107,18 +102,14 @@ class HHL():
         # State preparation is probabilistic the number of qubit flags should increase
         n_flag = 1
 
-        # Hamiltonian simulation circuit (Trotterization is default, though we do not implement it here)
+        # Hamiltonian simulation circuit 
         assert isinstance(matrix, (list, np.ndarray)), f"Invalid type for matrix: {type(matrix)}."
         if isinstance(matrix, list):
             matrix = np.array(matrix)
         check_numpy_matrix(matrix)
         if matrix.shape[0] != 2**vector_circuit.num_qubits:
             raise ValueError(
-                "Input vector dimension does not match input "
-                "matrix dimension! Vector dimension: "
-                + str(vector_circuit.num_qubits)
-                + ". Matrix dimension: "
-                + str(matrix.shape[0])
+                f"Dimension mismatch between input matrix and input vector! Matrix dimension: {matrix.shape[0]}. Vector dimension: {2**vector_circuit.num_qubits}."""
             )
         matrix_circuit = NumpyMatrix(matrix, evolution_time=2 * np.pi)
 
@@ -133,9 +124,9 @@ class HHL():
             kappa = 1
             
         # Update the number of qubits required to represent the eigenvalues
-        # The +neg_vals is to register negative eigenvalues because
-        # e^{-2 \pi i \lambda} = e^{2 \pi i (1 - \lambda)}
-        n_lambda = max(n_b + 1, int(np.ceil(np.log2(kappa + 1)))) + neg_vals
+        # The +neg_eigenvals is to register negative eigenvalues since
+        # e^{-2 pi i lambda} = e^{2 pi i (1 - lambda)}
+        n_lambda = max(n_b + 1, int(np.ceil(np.log2(kappa + 1)))) + neg_eigenvals
 
         # Compute bounds for the eigenvalues of the system
         if matrix_circuit.eigs_bounds is not None:
@@ -143,10 +134,10 @@ class HHL():
             
             # Constant so that the minimum eigenvalue is represented exactly; 
             # if there are negative eigenvalues, -1 to take into account the sign qubit
-            delta = self.get_delta(n_lambda - neg_vals, lambda_min, lambda_max)
+            delta = self.get_delta(n_lambda - neg_eigenvals, lambda_min, lambda_max)
             # Update evolution time
             matrix_circuit.evolution_time = (
-                2 * np.pi * delta / lambda_min / (2**neg_vals)
+                2 * np.pi * delta / lambda_min / (2**neg_eigenvals)
             )
             # Update the scaling of the solution
             self._scaling = lambda_min
@@ -154,9 +145,47 @@ class HHL():
             delta = 1 / (2**n_lambda)
             print("Note: the solution will be calculated up to a scaling factor.")
 
-        reciprocal_circuit = ExactReciprocal(n_lambda, delta, neg_vals=neg_vals)
+        # Create reciprocal circuit
+        if self._reciprocal_is_exact: # Exact Reciprocal
+            reciprocal_circuit = ExactReciprocal(n_lambda, delta, neg_vals=neg_eigenvals)
+        else: # Approximate Reciprocal
+            n_vals = 2**n_lambda
+            a = int(round(n_vals ** (2 / 3)))
+
+            # Calculate the degree of the polynomial and the number of intervals
+            r = 2 * delta / a + np.sqrt(np.abs(1 - (2 * delta / a) ** 2))
+            degree = min(
+                n_b,
+                int(
+                    np.log(
+                        1
+                        + (
+                            16.23
+                            * np.sqrt(np.log(r) ** 2 + (np.pi / 2) ** 2)
+                            * kappa
+                            * (2 * kappa - self._epsilon_r)
+                        )
+                        / self._epsilon_r
+                    )
+                ),
+            )
+            n_intervals = int(np.ceil(np.log((n_vals - 1) / a) / np.log(5)))
+
+            # Calculate breakpoints and polynomials
+            breakpoints = []
+            for i in range(0, n_intervals):
+                breakpoints.append(a * (5**i))
+
+                # Define the right breakpoint of the interval
+                if i == n_intervals - 1:
+                    breakpoints.append(n_vals - 1)
+
+            reciprocal_circuit = PiecewiseChebyshev(
+                lambda x: np.arcsin(delta / x), degree, breakpoints, n_lambda
+            )
+            
         # Update number of ancilla qubits
-        n_ancilla = matrix_circuit.num_ancillas
+        n_ancilla = max(matrix_circuit.num_ancillas, reciprocal_circuit.num_ancillas)
         
         # Initialise the quantum registers
         q_b = QuantumRegister(n_b)                  # initially stores b, ultimately stores solution
@@ -181,7 +210,13 @@ class HHL():
             qc.append(phase_estimation, q_lambda[:] + q_b[:])
             
         # Conditioned rotation
-        qc.append(reciprocal_circuit, q_lambda[::-1] + [q_flag[0]])
+        if self._reciprocal_is_exact:
+            qc.append(reciprocal_circuit, q_lambda[::-1] + [q_flag[0]])
+        else:
+            qc.append(
+                reciprocal_circuit.to_instruction(),
+                q_lambda[:] + [q_flag[0]] + q_ancilla[:reciprocal_circuit.num_ancillas]
+            )
         
         # Inverse QPE
         if n_ancilla > 0:
