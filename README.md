@@ -38,19 +38,20 @@ python hhl_test.py
 Feel free to play around with the inputs $A, \vec{b}$ to test out our implementation. 
 
 **Note:** make sure $A \in \mathbb{R}^{N \times N}$ is hermitian and has dimension that is power of 2. If $A$ isn't hermitian, you can adjust your inputs to be as follows:
-$A^{\prime} = \begin{pmatrix}
+
+$$A^{\prime} = \begin{pmatrix}
 0_{N \times N} & A \\
 A^{\dagger} & 0_{N \times N}
 \end{pmatrix}, \quad \vec{b}^{\prime} = \begin{pmatrix}
 \vec{b} \\
 \vec{0}
-\end{pmatrix}$
-Then, HHL will solve the equation $A^{\prime} \vec{x}^{\prime} = \vec{b}^{\prime}$ to obtain $\vec{x}^{\prime} = \begin{pmatrix}
+\end{pmatrix}$$
+
+Then, HHL will solve the equation $A^{\prime} \vec{x}^{\prime} = \vec{b}^{\prime}$ to obtain 
+
+$$\vec{x}^{\prime} = \begin{pmatrix}
 \vec{0} \\
 \vec{x}
-\end{pmatrix}$. You can then extract your desired solution using e.g. ```x = x_prime[N:]```.
+\end{pmatrix}$$
 
-
-## Implementation Details
-
-TODO
+You can then extract your desired solution using e.g. ```x = x_prime[N:]```.
