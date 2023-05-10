@@ -15,7 +15,6 @@ class NumpyMatrix(BlueprintCircuit):
         matrix: np.ndarray,
         tolerance: float = 1e-2,
         evolution_time: float = 1.0,
-        name: str = "numpy_matrix",
     ) -> None:
         """
         Args:
@@ -25,7 +24,7 @@ class NumpyMatrix(BlueprintCircuit):
             name: The name of the object.
         """
         
-        super().__init__(name=name)
+        super().__init__()
 
         # store parameters
         self._num_state_qubits = int(np.log2(matrix.shape[0]))
@@ -80,9 +79,8 @@ class NumpyMatrix(BlueprintCircuit):
     @property
     def eigenvalue_bounds(self) -> Tuple[float, float]:
         """Returns lower and upper bounds on the eigenvalues of the matrix."""
-        lambda_min = min(np.abs(np.linalg.eigvals(self.matrix)))
-        lambda_max = max(np.abs(np.linalg.eigvals(self.matrix)))
-        return lambda_min, lambda_max
+        eigenvals = np.abs(np.linalg.eigvals(self.matrix))
+        return min(eigenvals), max(eigenvals)
 
     @property
     def condition_number(self) -> Tuple[float, float]:
@@ -92,13 +90,11 @@ class NumpyMatrix(BlueprintCircuit):
 
     def _check_configuration(self, raise_on_failure: bool = True) -> bool:
         """Checks if the current configuration is valid."""
-        return check_numpy_matrix(matrix=self.matrix, 
-                                  raise_on_failure=raise_on_failure)
+        return check_numpy_matrix(matrix=self.matrix, raise_on_failure=raise_on_failure)
 
     def _reset_registers(self, num_state_qubits: int) -> None:
         """Resets the quantum registers."""
-        qr_state = QuantumRegister(num_state_qubits, "state")
-        self.qregs = [qr_state]
+        self.qregs = [QuantumRegister(num_state_qubits, "state")]
 
     def _build(self) -> None:
         """If not already built, build the circuit."""
@@ -111,13 +107,11 @@ class NumpyMatrix(BlueprintCircuit):
         """Returns the inverse of this matrix"""
         return NumpyMatrix(self.matrix, evolution_time=-1 * self._evolution_time)
     
-    def power(self, power: int, matrix_power: bool = False) -> QuantumCircuit:
+    def power(self, power: int) -> QuantumCircuit:
         """Build powers of the circuit.
         Args:
             power: The power to raise this circuit to.
-            matrix_power: If True, the circuit is converted to a matrix and then the
-                matrix power is computed. If False, and ``power`` is a positive integer,
-                the implementation defaults to ``repeat``.
+            
         Returns:
             The quantum circuit implementing powers of the unitary.
         """
