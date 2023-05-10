@@ -32,7 +32,7 @@ class HHL():
         """Computes the scaling factor to represent lambda_min exactly using n_lambda binary digits.
 
         Args:
-            n_l: The number of qubits to represent the eigenvalues.
+            n_lambda: The number of qubits to represent the eigenvalues.
             lambda_min: The smallest eigenvalue of the system.
             lambda_max: The largest eigenvalue of the system.
 
@@ -124,13 +124,12 @@ class HHL():
             kappa = 1
             
         # Update the number of qubits required to represent the eigenvalues
-        # The +neg_eigenvals is to register negative eigenvalues since
-        # e^{-2 pi i lambda} = e^{2 pi i (1 - lambda)}
+        # The +neg_eigenvals is to register negative eigenvalues
         n_lambda = max(n_b + 1, int(np.ceil(np.log2(kappa + 1)))) + neg_eigenvals
 
         # Compute bounds for the eigenvalues of the system
-        if matrix_circuit.eigs_bounds is not None:
-            lambda_min, lambda_max = matrix_circuit.eigs_bounds
+        if matrix_circuit.eigenvalue_bounds is not None:
+            lambda_min, lambda_max = matrix_circuit.eigenvalue_bounds
             
             # Constant so that the minimum eigenvalue is represented exactly; 
             # if there are negative eigenvalues, -1 to take into account the sign qubit
@@ -176,7 +175,7 @@ class HHL():
             for i in range(0, n_intervals):
                 breakpoints.append(a * (5**i))
 
-                # Define the right breakpoint of the interval
+                # Right breakpoint of the interval
                 if i == n_intervals - 1:
                     breakpoints.append(n_vals - 1)
 
@@ -191,7 +190,7 @@ class HHL():
         q_b = QuantumRegister(n_b)                  # initially stores b, ultimately stores solution
         q_lambda = QuantumRegister(n_lambda)        # eigenvalue evaluation qubits
         if n_ancilla > 0:
-            q_ancilla = AncillaRegister(n_ancilla)  # ancilla qubits
+            q_ancilla = AncillaRegister(n_ancilla)  # ancilla qubits if applicable
         q_flag = QuantumRegister(n_flag)            # flag qubits
 
         if n_ancilla > 0:

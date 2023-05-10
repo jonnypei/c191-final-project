@@ -78,7 +78,7 @@ class NumpyMatrix(BlueprintCircuit):
         self._matrix = matrix
 
     @property
-    def eigs_bounds(self) -> Tuple[float, float]:
+    def eigenvalue_bounds(self) -> Tuple[float, float]:
         """Returns lower and upper bounds on the eigenvalues of the matrix."""
         lambda_min = min(np.abs(np.linalg.eigvals(self.matrix)))
         lambda_max = max(np.abs(np.linalg.eigvals(self.matrix)))
